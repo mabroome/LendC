@@ -1,0 +1,241 @@
+# This program calculates the default rate % (default) the estimated annual interest and the
+# number of samples for the parameter. The custom is based on a range of parameter settings
+
+# Remove Loans with "A" rating and utilize workdata1 for calculations
+
+workdata1 <- workdata[workdata$A == 0,]
+
+# Establish results data.frame for capturing the default rate, annual inc and number of samples for 
+# Each parameter and custom parameters
+
+results <- data.frame(matrix(NA,nrow=80, ncol=0))
+
+# rnum is a counter to enter results in the rows of the result data.frame
+
+rnum <- 1
+
+# Determine based on All samples
+temp_name <- "TOTALS"
+results$name[rnum] <- temp_name
+results$default[rnum]<- mean(workdata1$y_default) * 100
+results$annual_int[rnum] <- sum(workdata1$y_int)/nrow(workdata1)
+results$count[rnum] <- nrow(workdata1)
+rnum <- rnum + 1
+
+# Determine the default rate, annual income and number of samples for parameters that have 0 or 1 = x
+
+parameter_name <- c("RENT","OWN","MORTGAGE")
+parameter_name <- c(parameter_name,"B","C","D","E","F","G","car","major_purchase", "pub_rec")
+parameter_name <- c(parameter_name,"credit_card","debt_consolidation", "home_improvement", "house")
+parameter_name <- c(parameter_name,"medical","small_business","other","vacation","wedding","moving" )
+
+count_parameters <- length(parameter_name)
+
+for (i in 1:count_parameters) {
+    temp_name <- parameter_name[i]
+    z <- workdata1[workdata1[temp_name] ==1,]
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    rnum <- rnum + 1
+}
+
+# Determine 36 & 60 month term
+
+    temp_name <- "36term"
+    z <- workdata1[workdata1$term == 36,]
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    rnum <- rnum + 1
+    
+    temp_name <- "60term"
+    z <- workdata1[workdata1$term == 60,]
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    rnum <- rnum + 1
+    
+# Determine length of employment
+
+for (i in 1:10) {
+    num_txt <- as.character(i-1)
+    parameter_name <- "emp_length"
+    temp_name <- paste(num_txt, parameter_name, sep="")
+    z <- workdata1[workdata1$emp_length >= (i-1) & workdata1$emp_length < i,]
+    j <- count_parameters + i
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    rnum <- rnum + 1
+    }
+    
+ 
+# Determine inquires over the last six months
+
+for (i in 1:6) {
+    num_txt <- as.character(i-1)
+    parameter_name <- "inq_last_6mths"
+    temp_name <- paste(num_txt, parameter_name, sep="")
+    z <- workdata1[workdata1$inq_last_6mths >= (i-1) & workdata1$inq_last_6mths < i,]
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    rnum <- rnum + 1
+    }
+ 
+# Determine the number of delinquencies over the last 2 years
+
+for (i in 1:5) {
+    num_txt <- as.character(i-1)
+    parameter_name <- "delinq_2yrs"
+    temp_name <- paste(num_txt, parameter_name, sep="")
+    z <- workdata1[workdata1$delinq_2yrs >= (i-1) & workdata1$delinq_2yrs < i,]
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    rnum <- rnum + 1
+    }
+
+
+# Determine the number of mths since last delinquency 
+
+del_countl <- 0
+del_counth <- 1
+for (i in 1:5) {
+    num_txt <- as.character(del_counth)
+    parameter_name <- "mths_since_recent_revol_delinq" 
+    temp_name <- paste(num_txt, parameter_name, sep="")
+    z <- workdata1[workdata1$mths_since_recent_revol_delinq  >= del_countl & workdata1$mths_since_recent_revol_delinq  < del_counth,]
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    if (i==1){ 
+        del_countl <- 1}
+        else{
+        del_countl <- del_counth}
+    del_counth <- del_countl + 8*i
+    rnum <- rnum + 1
+    }
+
+# Determine based on amount of money borrowed
+
+funded_l<-1
+for (i in 1:10) {
+    funded_h <- (2500 * i) + 1
+    num_txt <- as.character(funded_h)
+    parameter_name <- "funded_amnt"
+    temp_name <- paste(num_txt, parameter_name, sep="")
+    z <- workdata1[workdata1$funded_amnt >= funded_l & workdata1$funded_amnt < funded_h,]
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    funded_l <- funded_h
+    rnum <- rnum + 1
+    }
+
+# Determine based on annual income
+
+funded_l<- 1
+for (i in 1:5) {
+    funded_h <- (20000 * i) + 1
+    num_txt <- as.character(funded_h)
+    parameter_name <- "annual_inc"
+    temp_name <- paste(num_txt, parameter_name, sep="")
+    if (i<5) {z <- workdata1[workdata1$annual_inc >= funded_l & workdata1$annual_inc < funded_h,]} 
+    else {
+        z <- workdata1[workdata1$annual_inc >= funded_l,] }
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    funded_l <- funded_h
+    rnum <- rnum + 1
+    }
+
+# Determine based on earliest credit line
+
+    credit_zero <- 0
+    num_txt <- as.character(0)
+    parameter_name <- "earliest_cr_line"
+    temp_name <- paste(num_txt, parameter_name, sep="")
+    z <- workdata1[workdata1$earliest_cr_line == 0,] 
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    rnum <- rnum + 1
+
+    credit_l <- 1
+    for (i in 1:5) {
+        credit_h <- (3 * i) 
+        num_txt <- as.character(credit_h)
+        parameter_name <- "earliest_cr_line"
+        temp_name <- paste(num_txt, parameter_name, sep="")
+        if (i<5) {z <- workdata1[workdata1$earliest_cr_line >= credit_l & workdata1$earliest_cr_line < credit_h,]} 
+            else {
+                z <- workdata1[workdata1$earliest_cr_line >= credit_l,] }
+        results$name[rnum] <- temp_name
+        results$default[rnum] <- mean(z$y_default) * 100
+        results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+        results$count[rnum] <- nrow(z)
+        credit_l <- credit_h
+        rnum <- rnum + 1
+    }
+    
+# Revolving Credit Line Utilization
+   
+    for (i in 1:5) {
+        credit_h <- (20 * (6-i))
+        num_txt <- as.character(credit_h)
+        parameter_name <- "revol_util"
+        temp_name <- paste(num_txt, parameter_name, sep="")
+        z <- workdata1[workdata1$revol_util >= (credit_h-20) & workdata1$revol_util < credit_h,]
+        results$name[rnum] <- temp_name
+        results$default[rnum] <- mean(z$y_default) * 100
+        results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+        results$count[rnum] <- nrow(z)
+        rnum <- rnum + 1
+    }
+
+# Determine based on a custom set of combined parameters. In the case below it is
+# inquiries over last six months <1 + employment length between 1-5 yrs and no 
+# small business and funding amount under $15,000.
+
+    z<- workdata1
+    z <- workdata1[workdata1$inq_last_6mths < 1,]
+    z <- z[z$emp_length >= 1,]
+    z <- z[z$E == 0 & z$F == 0 & z$G == 0 & z$RENT ==0,]
+    # z <- z[z$B == 0 & z$C == 0 & z$E == 0 & z$F == 0 & z$G == 0 & z$RENT ==0,]
+    z <- z[z$funded_amnt <= 10000,]
+    z <- z[z$annual_inc > 50000,]
+    z <- z[z$small_business == 0,]
+    # z <- z[z$mths_since_recent_revol_delinq >12 | z$mths_since_recent_revol_delinq ==0,]
+    temp_name <- "Custom"
+    results$name[rnum] <- temp_name
+    results$default[rnum] <- mean(z$y_default) * 100
+    results$annual_int[rnum] <- sum(z$y_int)/nrow(z)
+    results$count[rnum] <- nrow(z)
+    
+    
+    # rnum <- rnum + 1
+    
+    write.csv(results, file = "results.csv")
+    
+    pdf("results1.pdf", height=11, width=8.5)
+    grid.table(results[1:35,])
+    dev.off()
+    
+    pdf("results2.pdf", height=11, width=8.5)
+    grid.table(results[36:68,])
+    dev.off()
+    
+    
